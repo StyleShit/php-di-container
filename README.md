@@ -43,6 +43,7 @@ $container->bind(InterfaceName::class, function (Container $containerInstance, $
 ```
 
 > **Note**
+>
 > Re-binding the same class will remove the currently living singleton instance from the Container (if there is one).
 
 
@@ -79,6 +80,7 @@ $container->make(B::class, [
 ```
 
 > **Note**
+> 
 > The `$args` array must be associative and the keys should be named after the constructor parameters.
 
 
