@@ -1,8 +1,15 @@
 {
     "require-dev": {
-        "laravel/pint": "^1.2"
+        "laravel/pint": "^1.2",
+        "pestphp/pest": "^1.22"
     },
     "scripts": {
-        "lint": "pint"
+        "lint": "pint",
+        "test": "pest"
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
     }
 }
