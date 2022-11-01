@@ -131,10 +131,12 @@ it('should auto-wire class dependencies', function () {
     });
 
     // Act.
-    $a = $container->make(A::class);
+    $a = $container->make(A::class, [
+        'name' => 'test',
+    ]);
 
     // Assert.
-    $expectedA = new A(new B(new C(new ContractImpl())));
+    $expectedA = new A(new B(new C(new ContractImpl())), 'test');
 
     expect($a)->toEqual($expectedA);
 });

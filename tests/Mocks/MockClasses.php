@@ -4,9 +4,11 @@ namespace Tests\Mocks;
 
 class A
 {
-    public function __construct(B $dep)
+    public function __construct(B $dep, $name = 'mock', $age = 10)
     {
         $this->b = $dep;
+        $this->name = $name;
+        $this->age = $age;
     }
 }
 
