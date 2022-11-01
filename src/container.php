@@ -8,30 +8,36 @@ class Container
 
     protected $instances = [];
 
-    public function bind($abstract, $resolver = null, $shared = false)
+    public function bind($abstract, $concrete = null, $shared = false)
     {
-        if ( $shared ) {
-            unset( $this->instances[$abstract] );
+        if (! is_string($abstract)) {
+            throw new \InvalidArgumentException('Abstract must be a string');
+        }
+
+        if ($shared) {
+            unset($this->instances[$abstract]);
         }
 
         // By default, try auto resolving a concrete from the given abstract.
-        if (! $resolver) {
-            $resolver = function (Container $container, $args) use ($abstract) {
-                return $container->makeWithDependencies($abstract, $args);
+        if (! is_callable($concrete)) {
+            $concreteClass = is_string($concrete) ? $concrete : $abstract;
+
+            $concrete = function (Container $container, $args) use ($concreteClass) {
+                return $container->makeWithDependencies($concreteClass, $args);
             };
         }
 
         $this->bindings[$abstract] = [
-            'resolver' => $resolver,
+            'resolver' => $concrete,
             'shared' => $shared,
         ];
 
         return $this;
     }
 
-    public function singleton($abstract, $resolver = null)
+    public function singleton($abstract, $concrete = null)
     {
-        return $this->bind($abstract, $resolver, true);
+        return $this->bind($abstract, $concrete, true);
     }
 
     public function has($abstract)

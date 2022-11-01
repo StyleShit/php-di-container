@@ -11,6 +11,16 @@ use Tests\Mocks\D;
 require_once __DIR__.'/../src/Container.php';
 require_once __DIR__.'/Mocks/MockClasses.php';
 
+it('it should throw for invalid abstract', function () {
+    // Arrange.
+    $container = new Container();
+
+    // Act & Assert.
+    expect(function () use ($container) {
+        $container->bind(null);
+    })->toThrow(\InvalidArgumentException::class, 'Abstract must be a string');
+});
+
 it('should automatically create a default concrete resolver if not supplied', function () {
     // Arrange.
     $container = new Container();
@@ -32,7 +42,18 @@ it('should bind an abstract to concrete using resolver function', function () {
     });
 
     // Assert.
-    expect($container->make(D::class, [ 'test' => 123 ]))->toEqual([ 'test' => 123 ]);
+    expect($container->make(D::class, ['test' => 123]))->toEqual(['test' => 123]);
+});
+
+it('should bind an abstract to concrete using class string', function () {
+    // Arrange.
+    $container = new Container();
+
+    // Act.
+    $container->bind(Contract::class, ContractImpl::class);
+
+    // Assert.
+    expect($container->make(Contract::class, ['name' => 'test']))->toEqual(new ContractImpl('test'));
 });
 
 it('should resolve concrete automatically if not bound', function () {
@@ -120,7 +141,7 @@ it('should override existing singleton instance on re-bind', function () {
     // Arrange.
     $container = new Container();
     $container->singleton(D::class);
-    
+
     // Init the original singleton.
     $container->make(D::class);
 
