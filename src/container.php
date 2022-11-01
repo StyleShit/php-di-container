@@ -1,5 +1,7 @@
 <?php
 
+namespace StyleShit;
+
 class Container
 {
     protected $bindings = [];
@@ -37,7 +39,11 @@ class Container
     {
         // Try to automatically make an abstract even if it's not bound.
         if (! $this->has($abstract)) {
-            if (! class_exists($abstract)) {
+            if (interface_exists($abstract)) {
+                throw new \Exception("Interface `$abstract::class` is not bound to a concrete");
+            }
+
+            if (! interface_exists($abstract) && ! class_exists($abstract)) {
                 throw new \Exception("Abstract `$abstract::class` not found");
             }
 
@@ -64,7 +70,7 @@ class Container
     {
         $dependencies = $this->resolveDependencies($abstract);
 
-        $dependencies = array_map(function (ReflectionParameter $dep) use ($args) {
+        $dependencies = array_map(function (\ReflectionParameter $dep) use ($args) {
             if (isset($args[$dep->getName()])) {
                 return $args[$dep->getName()];
             }
