@@ -1,6 +1,11 @@
 <?php
 
-namespace StyleShit;
+namespace StyleShit\DIContainer;
+
+use StyleShit\DIContainer\Exceptions\AbstractNotFoundException;
+use StyleShit\DIContainer\Exceptions\ConcreteNotFoundException;
+use StyleShit\DIContainer\Exceptions\InterfaceNotBoundException;
+use StyleShit\DIContainer\Exceptions\InvalidAbstractException;
 
 class Container
 {
@@ -11,21 +16,20 @@ class Container
     public function bind($abstract, $concrete = null, $shared = false)
     {
         if (! is_string($abstract)) {
-            throw new \InvalidArgumentException('Abstract must be a string');
+            throw InvalidAbstractException::make($abstract);
         }
 
         if ($shared) {
             unset($this->instances[$abstract]);
         }
 
-        // By default, try auto resolving a concrete from the given abstract.
-        if (! is_callable($concrete)) {
-            $concreteClass = is_string($concrete) ? $concrete : $abstract;
-
-            $concrete = function (Container $container, $args) use ($concreteClass) {
-                return $container->makeWithDependencies($concreteClass, $args);
-            };
+        // If no concrete is supplied, use the abstract as the concrete.
+        // Mainly used to bind singletons, or just register a class to the container.
+        if (is_null($concrete)) {
+            $concrete = $abstract;
         }
+
+        $concrete = $this->wrapConcrete($concrete);
 
         $this->bindings[$abstract] = [
             'resolver' => $concrete,
@@ -50,11 +54,11 @@ class Container
         // Try to automatically make an abstract even if it's not bound.
         if (! $this->has($abstract)) {
             if (interface_exists($abstract)) {
-                throw new \InvalidArgumentException("Interface `$abstract::class` is not bound to a concrete");
+                throw InterfaceNotBoundException::make($abstract);
             }
 
             if (! interface_exists($abstract) && ! class_exists($abstract)) {
-                throw new \InvalidArgumentException("Abstract `$abstract::class` not found");
+                throw AbstractNotFoundException::make($abstract);
             }
 
             return $this->makeWithDependencies($abstract, $args);
@@ -76,15 +80,17 @@ class Container
         return $resolve($this, $args);
     }
 
-    protected function makeWithDependencies($abstract, $args)
+    protected function makeWithDependencies($concrete, $args)
     {
-        $dependencies = $this->resolveDependencies($abstract);
+        $dependencies = $this->resolveDependencies($concrete);
 
         $dependencies = array_map(function (\ReflectionParameter $dep) use ($args) {
-            if (isset($args[$dep->getName()])) {
+            // User-defined args.
+            if (array_key_exists($dep->getName(), $args)) {
                 return $args[$dep->getName()];
             }
 
+            // Default constructor args.
             if ($dep->isDefaultValueAvailable()) {
                 return $dep->getDefaultValue();
             }
@@ -92,12 +98,14 @@ class Container
             return $this->make($dep->getType()->getName());
         }, $dependencies);
 
-        return new $abstract(...$dependencies);
+        $reflection = new \ReflectionClass($concrete);
+
+        return $reflection->newInstanceArgs($dependencies);
     }
 
-    protected function resolveDependencies($abstract)
+    protected function resolveDependencies($concrete)
     {
-        $reflection = new \ReflectionClass($abstract);
+        $reflection = new \ReflectionClass($concrete);
         $constructor = $reflection->getConstructor();
 
         if (! $constructor) {
@@ -105,5 +113,21 @@ class Container
         }
 
         return $constructor->getParameters();
+    }
+
+    protected function wrapConcrete($concrete)
+    {
+        if (is_callable($concrete)) {
+            return $concrete;
+        }
+
+        if (! class_exists($concrete)) {
+            throw ConcreteNotFoundException::make($concrete);
+        }
+
+        // By default, try auto resolving a concrete.
+        return function (Container $container, $args) use ($concrete) {
+            return $container->makeWithDependencies($concrete, $args);
+        };
     }
 }

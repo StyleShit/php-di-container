@@ -1,6 +1,10 @@
 <?php
 
-use StyleShit\Container;
+use StyleShit\DIContainer\Container;
+use StyleShit\DIContainer\Exceptions\AbstractNotFoundException;
+use StyleShit\DIContainer\Exceptions\ConcreteNotFoundException;
+use StyleShit\DIContainer\Exceptions\InterfaceNotBoundException;
+use StyleShit\DIContainer\Exceptions\InvalidAbstractException;
 use Tests\Mocks\A;
 use Tests\Mocks\B;
 use Tests\Mocks\C;
@@ -9,6 +13,10 @@ use Tests\Mocks\ContractImpl;
 use Tests\Mocks\D;
 
 require_once __DIR__.'/../src/Container.php';
+require_once __DIR__.'/../src/Exceptions/AbstractNotFoundException.php';
+require_once __DIR__.'/../src/Exceptions/ConcreteNotFoundException.php';
+require_once __DIR__.'/../src/Exceptions/InterfaceNotBoundException.php';
+require_once __DIR__.'/../src/Exceptions/InvalidAbstractException.php';
 require_once __DIR__.'/Mocks/MockClasses.php';
 
 it('should throw when binding invalid abstract', function () {
@@ -18,7 +26,17 @@ it('should throw when binding invalid abstract', function () {
     // Act & Assert.
     expect(function () use ($container) {
         $container->bind(null);
-    })->toThrow(\InvalidArgumentException::class, 'Abstract must be a string');
+    })->toThrow(InvalidAbstractException::class);
+});
+
+it('should throw when binding interface without concrete', function () {
+    // Arrange.
+    $container = new Container();
+
+    // Act & Assert.
+    expect(function () use ($container) {
+        $container->bind(Contract::class);
+    })->toThrow(ConcreteNotFoundException::class);
 });
 
 it('should automatically create a default concrete resolver if not supplied', function () {
@@ -82,7 +100,7 @@ it('should throw when making unbound interface', function () {
     // Act & Assert.
     expect(function () use ($container) {
         $container->make(Contract::class);
-    })->toThrow(\InvalidArgumentException::class, 'Interface `Tests\Mocks\Contract::class` is not bound to a concrete');
+    })->toThrow(InterfaceNotBoundException::class);
 });
 
 it('should throw when making invalid abstract', function () {
@@ -92,7 +110,18 @@ it('should throw when making invalid abstract', function () {
     // Act & Assert.
     expect(function () use ($container) {
         $container->make('non-existing-abstract');
-    })->toThrow(\InvalidArgumentException::class, 'Abstract `non-existing-abstract::class` not found');
+    })->toThrow(AbstractNotFoundException::class);
+});
+
+it('should make concrete without a constructor', function () {
+    // Arrange.
+    $container = new Container();
+
+    // Act.
+    $std = $container->make(\stdClass::class);
+
+    // Assert.
+    expect($std)->toEqual(new \stdClass());
 });
 
 it('should make concrete with args', function () {
@@ -106,6 +135,7 @@ it('should make concrete with args', function () {
 
     // Assert.
     expect($d)->toEqual(new D('test'));
+    expect($d->name)->toEqual('test');
 });
 
 it('should make concrete with args when using the default resolver', function () {
