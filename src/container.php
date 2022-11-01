@@ -50,11 +50,11 @@ class Container
         // Try to automatically make an abstract even if it's not bound.
         if (! $this->has($abstract)) {
             if (interface_exists($abstract)) {
-                throw new \Exception("Interface `$abstract::class` is not bound to a concrete");
+                throw new \InvalidArgumentException("Interface `$abstract::class` is not bound to a concrete");
             }
 
             if (! interface_exists($abstract) && ! class_exists($abstract)) {
-                throw new \Exception("Abstract `$abstract::class` not found");
+                throw new \InvalidArgumentException("Abstract `$abstract::class` not found");
             }
 
             return $this->makeWithDependencies($abstract, $args);
