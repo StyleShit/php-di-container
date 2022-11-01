@@ -11,7 +11,7 @@ use Tests\Mocks\D;
 require_once __DIR__.'/../src/Container.php';
 require_once __DIR__.'/Mocks/MockClasses.php';
 
-it('it should throw when binding invalid abstract', function () {
+it('should throw when binding invalid abstract', function () {
     // Arrange.
     $container = new Container();
 
@@ -75,7 +75,7 @@ it('should determine if an abstract is bound', function () {
     expect($container->has(Contract::class))->toBeFalse();
 });
 
-it('it should throw when making unbound interface', function () {
+it('should throw when making unbound interface', function () {
     // Arrange.
     $container = new Container();
 
@@ -85,7 +85,7 @@ it('it should throw when making unbound interface', function () {
     })->toThrow(\InvalidArgumentException::class, 'Interface `Tests\Mocks\Contract::class` is not bound to a concrete');
 });
 
-it('it should throw when making invalid abstract', function () {
+it('should throw when making invalid abstract', function () {
     // Arrange.
     $container = new Container();
 
@@ -95,7 +95,7 @@ it('it should throw when making invalid abstract', function () {
     })->toThrow(\InvalidArgumentException::class, 'Abstract `non-existing-abstract::class` not found');
 });
 
-it('it should make concrete with args', function () {
+it('should make concrete with args', function () {
     // Arrange.
     $container = new Container();
 
@@ -108,7 +108,7 @@ it('it should make concrete with args', function () {
     expect($d)->toEqual(new D('test'));
 });
 
-it('it should make concrete with args when using the default resolver', function () {
+it('should make concrete with args when using the default resolver', function () {
     // Arrange.
     $container = new Container();
     $container->bind(D::class);
