@@ -64,6 +64,17 @@ it('should resolve concrete automatically if not bound', function () {
     expect($container->make(D::class))->toEqual(new D());
 });
 
+it('should determine if an abstract is bound', function () {
+    // Arrange.
+    $container = new Container();
+
+    $container->bind(D::class);
+
+    // Act & Assert.
+    expect($container->has(D::class))->toBeTrue();
+    expect($container->has(Contract::class))->toBeFalse();
+});
+
 it('it should throw when making unbound interface', function () {
     // Arrange.
     $container = new Container();
