@@ -115,3 +115,20 @@ it('should use the same instance for singleton', function () {
 
     expect($singleton1)->toBe($singleton2);
 });
+
+it('should override existing singleton instance on re-bind', function () {
+    // Arrange.
+    $container = new Container();
+    $container->singleton(D::class);
+    
+    // Init the original singleton.
+    $container->make(D::class);
+
+    // Act.
+    $container->singleton(D::class, function () {
+        return 'new-singleton';
+    });
+
+    // Assert.
+    expect($container->make(D::class))->toBe('new-singleton');
+});

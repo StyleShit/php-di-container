@@ -10,6 +10,10 @@ class Container
 
     public function bind($abstract, $resolver = null, $shared = false)
     {
+        if ( $shared ) {
+            unset( $this->instances[$abstract] );
+        }
+
         // By default, try auto resolving a concrete from the given abstract.
         if (! $resolver) {
             $resolver = function (Container $container, $args) use ($abstract) {
