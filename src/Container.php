@@ -97,10 +97,6 @@ class Container
 
     protected function resolveDependencies($abstract)
     {
-        if (! interface_exists($abstract) && ! class_exists($abstract)) {
-            throw new \Exception("Abstract `$abstract::class` not found");
-        }
-
         $reflection = new \ReflectionClass($abstract);
         $constructor = $reflection->getConstructor();
 
