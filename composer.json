@@ -11,5 +11,15 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true
         }
+    },
+    "autoload": {
+        "psr-4": {
+            "StyleShit\\DIContainer\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "StyleShit\\DIContainer\\Tests\\": "tests"
+        }
     }
 }

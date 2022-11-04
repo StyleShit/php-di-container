@@ -1,23 +1,18 @@
 <?php
 
+namespace StyleShit\DIContainer\Tests;
+
 use StyleShit\DIContainer\Container;
 use StyleShit\DIContainer\Exceptions\AbstractNotFoundException;
 use StyleShit\DIContainer\Exceptions\ConcreteNotFoundException;
 use StyleShit\DIContainer\Exceptions\InterfaceNotBoundException;
 use StyleShit\DIContainer\Exceptions\InvalidAbstractException;
-use Tests\Mocks\A;
-use Tests\Mocks\B;
-use Tests\Mocks\C;
-use Tests\Mocks\Contract;
-use Tests\Mocks\ContractImpl;
-use Tests\Mocks\D;
-
-require_once __DIR__.'/../src/Container.php';
-require_once __DIR__.'/../src/Exceptions/AbstractNotFoundException.php';
-require_once __DIR__.'/../src/Exceptions/ConcreteNotFoundException.php';
-require_once __DIR__.'/../src/Exceptions/InterfaceNotBoundException.php';
-require_once __DIR__.'/../src/Exceptions/InvalidAbstractException.php';
-require_once __DIR__.'/Mocks/MockClasses.php';
+use StyleShit\DIContainer\Tests\Mocks\A;
+use StyleShit\DIContainer\Tests\Mocks\B;
+use StyleShit\DIContainer\Tests\Mocks\C;
+use StyleShit\DIContainer\Tests\Mocks\Contract;
+use StyleShit\DIContainer\Tests\Mocks\ContractImpl;
+use StyleShit\DIContainer\Tests\Mocks\D;
 
 it('should throw when binding invalid abstract', function () {
     // Arrange.
