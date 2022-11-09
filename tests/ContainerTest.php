@@ -5,6 +5,7 @@ namespace StyleShit\DIContainer\Tests;
 use StyleShit\DIContainer\Container;
 use StyleShit\DIContainer\Exceptions\AbstractNotFoundException;
 use StyleShit\DIContainer\Exceptions\ConcreteNotFoundException;
+use StyleShit\DIContainer\Exceptions\ConcreteNotInstantiableException;
 use StyleShit\DIContainer\Exceptions\InterfaceNotBoundException;
 use StyleShit\DIContainer\Exceptions\InvalidAbstractException;
 use StyleShit\DIContainer\Tests\Mocks\A;
@@ -24,14 +25,24 @@ it('should throw when binding invalid abstract', function () {
     })->toThrow(InvalidAbstractException::class);
 });
 
-it('should throw when binding interface without concrete', function () {
+it('should throw when binding a non-existing concrete', function () {
+    // Arrange.
+    $container = new Container();
+
+    // Act & Assert.
+    expect(function () use ($container) {
+        $container->bind('non-existing-concrete');
+    })->toThrow(ConcreteNotFoundException::class);
+});
+
+it('should throw when binding a non-instantiable concrete', function () {
     // Arrange.
     $container = new Container();
 
     // Act & Assert.
     expect(function () use ($container) {
         $container->bind(Contract::class);
-    })->toThrow(ConcreteNotFoundException::class);
+    })->toThrow(ConcreteNotInstantiableException::class);
 });
 
 it('should automatically create a default concrete resolver if not supplied', function () {

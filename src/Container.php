@@ -4,6 +4,7 @@ namespace StyleShit\DIContainer;
 
 use StyleShit\DIContainer\Exceptions\AbstractNotFoundException;
 use StyleShit\DIContainer\Exceptions\ConcreteNotFoundException;
+use StyleShit\DIContainer\Exceptions\ConcreteNotInstantiableException;
 use StyleShit\DIContainer\Exceptions\InterfaceNotBoundException;
 use StyleShit\DIContainer\Exceptions\InvalidAbstractException;
 
@@ -80,6 +81,33 @@ class Container
         return $resolve($this, $args);
     }
 
+    protected function wrapConcrete($concrete)
+    {
+        if (is_callable($concrete)) {
+            return $concrete;
+        }
+
+        if (! class_exists($concrete) && ! interface_exists($concrete)) {
+            throw ConcreteNotFoundException::make($concrete);
+        }
+
+        if (! $this->isInstantiable($concrete)) {
+            throw ConcreteNotInstantiableException::make($concrete);
+        }
+
+        // By default, try auto resolving a concrete.
+        return function (Container $container, $args) use ($concrete) {
+            return $container->makeWithDependencies($concrete, $args);
+        };
+    }
+
+    protected function isInstantiable($concrete)
+    {
+        $reflection = new \ReflectionClass($concrete);
+
+        return $reflection->isInstantiable();
+    }
+
     protected function makeWithDependencies($concrete, $args)
     {
         $dependencies = $this->resolveDependencies($concrete);
@@ -113,21 +141,5 @@ class Container
         }
 
         return $constructor->getParameters();
-    }
-
-    protected function wrapConcrete($concrete)
-    {
-        if (is_callable($concrete)) {
-            return $concrete;
-        }
-
-        if (! class_exists($concrete)) {
-            throw ConcreteNotFoundException::make($concrete);
-        }
-
-        // By default, try auto resolving a concrete.
-        return function (Container $container, $args) use ($concrete) {
-            return $container->makeWithDependencies($concrete, $args);
-        };
     }
 }
