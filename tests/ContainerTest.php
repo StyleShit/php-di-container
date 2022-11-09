@@ -166,7 +166,39 @@ it('should auto-wire class dependencies', function () {
     expect($a)->toEqual($expectedA);
 });
 
-it('should make singleton with args', function () {
+it('should bind an abstract to a concrete as singleton', function () {
+    // Arrange.
+    $container = new Container();
+
+    // Act.
+    $container->singleton(Contract::class, ContractImpl::class);
+
+    $contractImpl = $container->make(Contract::class, [
+        'name' => 'test',
+    ]);
+
+    // Assert.
+    expect($contractImpl)->toEqual(new ContractImpl('test'));
+});
+
+it('should bind an abstract to a resolver as singleton', function () {
+    // Arrange.
+    $container = new Container();
+
+    // Act.
+    $container->singleton(Contract::class, function ($container, $args) {
+        return new ContractImpl($args['name']);
+    });
+
+    $contractImpl = $container->make(Contract::class, [
+        'name' => 'test',
+    ]);
+
+    // Assert.
+    expect($contractImpl)->toEqual(new ContractImpl('test'));
+});
+
+it('should bind a concrete as singleton', function () {
     // Arrange.
     $container = new Container();
 
