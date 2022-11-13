@@ -104,6 +104,46 @@ $container->has(Implementation::class); // false
 ```
 
 
+### `Container::forgetInstance($abstract)`
+Remove a singleton instance from the Container:
+
+
+```PHP
+$container = Container::getInstance();
+
+$container->singleton(InterfaceName::class, Implementation::class);
+
+// Get  the initial instance.
+$initialInstance = $container->make(InterfaceName::class);
+
+// Remove the instance from the Container.
+$container->forgetInstance(InterfaceName::class);
+
+// Get a new instance.
+$newInstance = $container->make(InterfaceName::class);
+```
+
+
+### `Container::forgetInstances()`
+Remove all singleton instances from the Container:
+
+
+```PHP
+$container = Container::getInstance();
+
+$container->singleton(InterfaceName::class, Implementation::class);
+
+// Get the initial instance.
+$initialInstance = $container->make(InterfaceName::class);
+
+// Remove all of the instances from the Container.
+$container->forgetInstances();
+
+// Get a new instance.
+$newInstance = $container->make(InterfaceName::class);
+```
+
+
 ### `Container::flush()`
 Remove all instances & bindings from the Container (essentially resetting it):
 
