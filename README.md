@@ -3,12 +3,19 @@ Just a simple DI Container for PHP, Inspired by Laravel's API.
 
 ## Available Methods:
 
-### `Container::bind($abstract, $concrete = null, $shared = false)`
+### `Container::getInstance()`
+Get the singleton instance of the Container (you can still instantiate it as a normal class):
 
+```PHP
+$container = Container::getInstance();
+```
+
+
+### `Container::bind($abstract, $concrete = null, $shared = false)`
 Binding an interface to an implementation:
 
 ```PHP
-$container = new Container();
+$container = Container::getInstance();
 
 // Simple binding by class string.
 $container->bind(InterfaceName::class, Implementation::class);
@@ -26,7 +33,7 @@ $container->bind(InterfaceName::class, function (Container $containerInstance, $
 Binding a class as a singleton, so the Container will always resolve to the same instance:
 
 ```PHP
-$container = new Container();
+$container = Container::getInstance();
 
 // Simple singleton binding.
 $container->singleton(Implementation::class);
@@ -51,7 +58,7 @@ $container->bind(InterfaceName::class, function (Container $containerInstance, $
 Making an instance of a class / interface:
 
 ```PHP
-$container = new Container();
+$container = Container::getInstance();
 
 $container->bind(InterfaceName::class, Implementation::class);
 
@@ -88,12 +95,26 @@ $container->make(B::class, [
 Determine if the Container has a binding for the given abstract:
 
 ```PHP
-$container = new Container();
+$container = Container::getInstance();
 
 $container->bind(InterfaceName::class, Implementation::class);
 
 $container->has(InterfaceName::class); // true
 $container->has(Implementation::class); // false
+```
+
+
+### `Container::flush()`
+Remove all instances & bindings from the Container (essentially resetting it):
+
+
+```PHP
+$container = Container::getInstance();
+
+$container->bind(Interface1::class, Implementation1::class);
+$container->singleton(Interface2::class, Implementation2::class);
+
+$container->flush();
 ```
 
 ___
