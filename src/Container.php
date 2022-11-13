@@ -10,9 +10,20 @@ use StyleShit\DIContainer\Exceptions\InvalidAbstractException;
 
 class Container
 {
+    private static $instance;
+
     protected $bindings = [];
 
     protected $instances = [];
+
+    public static function getInstance()
+    {
+        if (static::$instance === null) {
+            static::$instance = new static();
+        }
+
+        return static::$instance;
+    }
 
     public function bind($abstract, $concrete = null, $shared = false)
     {
@@ -79,6 +90,12 @@ class Container
 
         // Non-Singletons.
         return $resolve($this, $args);
+    }
+
+    public function flush()
+    {
+        $this->bindings = [];
+        $this->instances = [];
     }
 
     protected function wrapConcrete($concrete)

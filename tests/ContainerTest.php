@@ -15,9 +15,13 @@ use StyleShit\DIContainer\Tests\Mocks\Contract;
 use StyleShit\DIContainer\Tests\Mocks\ContractImpl;
 use StyleShit\DIContainer\Tests\Mocks\D;
 
+afterEach(function () {
+    Container::getInstance()->flush();
+});
+
 it('should throw when binding invalid abstract', function () {
     // Arrange.
-    $container = new Container();
+    $container = Container::getInstance();
 
     // Act & Assert.
     expect(function () use ($container) {
@@ -27,7 +31,7 @@ it('should throw when binding invalid abstract', function () {
 
 it('should throw when binding a non-existing concrete', function () {
     // Arrange.
-    $container = new Container();
+    $container = Container::getInstance();
 
     // Act & Assert.
     expect(function () use ($container) {
@@ -37,7 +41,7 @@ it('should throw when binding a non-existing concrete', function () {
 
 it('should throw when binding a non-instantiable concrete', function () {
     // Arrange.
-    $container = new Container();
+    $container = Container::getInstance();
 
     // Act & Assert.
     expect(function () use ($container) {
@@ -47,7 +51,7 @@ it('should throw when binding a non-instantiable concrete', function () {
 
 it('should automatically create a default concrete resolver if not supplied', function () {
     // Arrange.
-    $container = new Container();
+    $container = Container::getInstance();
 
     // Act.
     $container->bind(D::class);
@@ -58,7 +62,7 @@ it('should automatically create a default concrete resolver if not supplied', fu
 
 it('should bind an abstract to concrete using resolver function', function () {
     // Arrange.
-    $container = new Container();
+    $container = Container::getInstance();
 
     // Act.
     $container->bind(D::class, function (Container $container, $args) {
@@ -71,7 +75,7 @@ it('should bind an abstract to concrete using resolver function', function () {
 
 it('should bind an abstract to concrete using class string', function () {
     // Arrange.
-    $container = new Container();
+    $container = Container::getInstance();
 
     // Act.
     $container->bind(Contract::class, ContractImpl::class);
@@ -82,7 +86,7 @@ it('should bind an abstract to concrete using class string', function () {
 
 it('should resolve concrete automatically if not bound', function () {
     // Arrange.
-    $container = new Container();
+    $container = Container::getInstance();
 
     // Act & Assert.
     expect($container->make(D::class))->toEqual(new D());
@@ -90,7 +94,7 @@ it('should resolve concrete automatically if not bound', function () {
 
 it('should determine if an abstract is bound', function () {
     // Arrange.
-    $container = new Container();
+    $container = Container::getInstance();
 
     $container->bind(D::class);
 
@@ -101,7 +105,7 @@ it('should determine if an abstract is bound', function () {
 
 it('should throw when making unbound interface', function () {
     // Arrange.
-    $container = new Container();
+    $container = Container::getInstance();
 
     // Act & Assert.
     expect(function () use ($container) {
@@ -111,7 +115,7 @@ it('should throw when making unbound interface', function () {
 
 it('should throw when making invalid abstract', function () {
     // Arrange.
-    $container = new Container();
+    $container = Container::getInstance();
 
     // Act & Assert.
     expect(function () use ($container) {
@@ -121,7 +125,7 @@ it('should throw when making invalid abstract', function () {
 
 it('should make concrete without a constructor', function () {
     // Arrange.
-    $container = new Container();
+    $container = Container::getInstance();
 
     // Act.
     $std = $container->make(\stdClass::class);
@@ -132,7 +136,7 @@ it('should make concrete without a constructor', function () {
 
 it('should make concrete with args', function () {
     // Arrange.
-    $container = new Container();
+    $container = Container::getInstance();
 
     // Act.
     $d = $container->make(D::class, [
@@ -146,7 +150,7 @@ it('should make concrete with args', function () {
 
 it('should make concrete with args when using the default resolver', function () {
     // Arrange.
-    $container = new Container();
+    $container = Container::getInstance();
     $container->bind(D::class);
 
     // Act.
@@ -160,7 +164,7 @@ it('should make concrete with args when using the default resolver', function ()
 
 it('should auto-wire class dependencies', function () {
     // Arrange.
-    $container = new Container();
+    $container = Container::getInstance();
 
     $container->bind(Contract::class, function () {
         return new ContractImpl();
@@ -179,7 +183,7 @@ it('should auto-wire class dependencies', function () {
 
 it('should bind an abstract to a concrete as singleton', function () {
     // Arrange.
-    $container = new Container();
+    $container = Container::getInstance();
 
     // Act.
     $container->singleton(Contract::class, ContractImpl::class);
@@ -194,7 +198,7 @@ it('should bind an abstract to a concrete as singleton', function () {
 
 it('should bind an abstract to a resolver as singleton', function () {
     // Arrange.
-    $container = new Container();
+    $container = Container::getInstance();
 
     // Act.
     $container->singleton(Contract::class, function ($container, $args) {
@@ -211,7 +215,7 @@ it('should bind an abstract to a resolver as singleton', function () {
 
 it('should bind a concrete as singleton', function () {
     // Arrange.
-    $container = new Container();
+    $container = Container::getInstance();
 
     // Act.
     $container->singleton(D::class);
@@ -226,7 +230,7 @@ it('should bind a concrete as singleton', function () {
 
 it('should use the same instance for singleton', function () {
     // Arrange.
-    $container = new Container();
+    $container = Container::getInstance();
 
     // Act.
     $container->singleton(D::class);
@@ -240,7 +244,7 @@ it('should use the same instance for singleton', function () {
 
 it('should override existing singleton instance on re-bind', function () {
     // Arrange.
-    $container = new Container();
+    $container = Container::getInstance();
     $container->singleton(D::class);
 
     // Init the original singleton.
@@ -253,4 +257,21 @@ it('should override existing singleton instance on re-bind', function () {
 
     // Assert.
     expect($container->make(D::class))->toBe('new-singleton');
+});
+
+it('should flush the current bindings and instances', function () {
+    // Arrange.
+    $container = Container::getInstance();
+
+    $container->bind(Contract::class, function ($container, $args) {
+        return new ContractImpl($args['name']);
+    });
+
+    // Act.
+    $container->flush();
+
+    // Assert.
+    expect(function () use ($container) {
+        $container->make(Contract::class);
+    })->toThrow(InterfaceNotBoundException::class);
 });
