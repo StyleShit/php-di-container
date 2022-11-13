@@ -148,6 +148,20 @@ it('should make concrete with args', function () {
     expect($d->name)->toEqual('test');
 });
 
+it('should make concrete with a nullish arg', function () {
+    // Arrange.
+    $container = Container::getInstance();
+
+    // Act.
+    $d = $container->make(D::class, [
+        'name' => null,
+    ]);
+
+    // Assert.
+    expect($d)->toEqual(new D(null));
+    expect($d->name)->toEqual(null);
+});
+
 it('should make concrete with args when using the default resolver', function () {
     // Arrange.
     $container = Container::getInstance();
