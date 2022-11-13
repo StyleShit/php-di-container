@@ -259,6 +259,39 @@ it('should override existing singleton instance on re-bind', function () {
     expect($container->make(D::class))->toBe('new-singleton');
 });
 
+it('should forget a singleton instance', function () {
+    // Arrange.
+    $container = Container::getInstance();
+
+    $container->singleton(D::class);
+
+    $instanceD = $container->make(D::class);
+
+    // Act.
+    $container->forgetInstance(D::class);
+
+    // Assert.
+    expect($instanceD)->not()->toBe($container->make(D::class));
+});
+
+it('should forget all singleton instances', function () {
+    // Arrange.
+    $container = Container::getInstance();
+
+    $container->singleton(ContractImpl::class);
+    $container->singleton(D::class);
+
+    $instanceContract = $container->make(ContractImpl::class);
+    $instanceD = $container->make(D::class);
+
+    // Act.
+    $container->forgetInstances();
+
+    // Assert.
+    expect($instanceContract)->not()->toBe($container->make(ContractImpl::class));
+    expect($instanceD)->not()->toBe($container->make(D::class));
+});
+
 it('should flush the current bindings and instances', function () {
     // Arrange.
     $container = Container::getInstance();

@@ -92,6 +92,16 @@ class Container
         return $resolve($this, $args);
     }
 
+    public function forgetInstance($abstract)
+    {
+        unset($this->instances[$abstract]);
+    }
+
+    public function forgetInstances()
+    {
+        $this->instances = [];
+    }
+
     public function flush()
     {
         $this->bindings = [];
