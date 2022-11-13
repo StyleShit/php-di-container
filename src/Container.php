@@ -69,7 +69,7 @@ class Container
                 throw InterfaceNotBoundException::make($abstract);
             }
 
-            if (! interface_exists($abstract) && ! class_exists($abstract)) {
+            if (! class_exists($abstract)) {
                 throw AbstractNotFoundException::make($abstract);
             }
 
