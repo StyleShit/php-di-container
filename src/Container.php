@@ -7,6 +7,7 @@ use StyleShit\DIContainer\Exceptions\ConcreteNotFoundException;
 use StyleShit\DIContainer\Exceptions\ConcreteNotInstantiableException;
 use StyleShit\DIContainer\Exceptions\InterfaceNotBoundException;
 use StyleShit\DIContainer\Exceptions\InvalidAbstractException;
+use StyleShit\DIContainer\Exceptions\UnresolvableDependencyException;
 
 class Container
 {
@@ -138,24 +139,45 @@ class Container
     protected function makeWithDependencies($concrete, $args)
     {
         $dependencies = $this->resolveDependencies($concrete);
+        $finalDependencies = [];
 
-        $dependencies = array_map(function (\ReflectionParameter $dep) use ($args) {
+        foreach ($dependencies as $dep) {
             // User-defined args.
             if (array_key_exists($dep->getName(), $args)) {
-                return $args[$dep->getName()];
+                $finalDependencies[] = $args[$dep->getName()];
+
+                continue;
             }
 
             // Default constructor args.
             if ($dep->isDefaultValueAvailable()) {
-                return $dep->getDefaultValue();
+                $finalDependencies[] = $dep->getDefaultValue();
+
+                continue;
             }
 
-            return $this->make($dep->getType()->getName());
-        }, $dependencies);
+            // Variadic args (...$args).
+            if ($dep->isVariadic()) {
+                $variadicDependency = $this->resolveVariadicDependency($dep);
+
+                if (! is_null($variadicDependency)) {
+                    $finalDependencies[] = $variadicDependency;
+                }
+
+                continue;
+            }
+
+            // Unresolvable dependency.
+            if (! $this->isResolveableDependency($dep)) {
+                throw UnresolvableDependencyException::make($dep->getName());
+            }
+
+            $finalDependencies[] = $this->make($dep->getType()->getName());
+        }
 
         $reflection = new \ReflectionClass($concrete);
 
-        return $reflection->newInstanceArgs($dependencies);
+        return $reflection->newInstanceArgs($finalDependencies);
     }
 
     protected function resolveDependencies($concrete)
@@ -168,5 +190,17 @@ class Container
         }
 
         return $constructor->getParameters();
+    }
+
+    protected function resolveVariadicDependency(\ReflectionParameter $dep)
+    {
+        return $this->isResolveableDependency($dep)
+            ? $this->make($dep->getType()->getName())
+            : null;
+    }
+
+    protected function isResolveableDependency(\ReflectionParameter $dep)
+    {
+        return $dep->hasType() && ! $dep->getType()->isBuiltin();
     }
 }

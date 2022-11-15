@@ -8,12 +8,17 @@ use StyleShit\DIContainer\Exceptions\ConcreteNotFoundException;
 use StyleShit\DIContainer\Exceptions\ConcreteNotInstantiableException;
 use StyleShit\DIContainer\Exceptions\InterfaceNotBoundException;
 use StyleShit\DIContainer\Exceptions\InvalidAbstractException;
+use StyleShit\DIContainer\Exceptions\UnresolvableDependencyException;
 use StyleShit\DIContainer\Tests\Mocks\A;
 use StyleShit\DIContainer\Tests\Mocks\B;
 use StyleShit\DIContainer\Tests\Mocks\C;
 use StyleShit\DIContainer\Tests\Mocks\Contract;
 use StyleShit\DIContainer\Tests\Mocks\ContractImpl;
 use StyleShit\DIContainer\Tests\Mocks\D;
+use StyleShit\DIContainer\Tests\Mocks\PrimitiveDependency;
+use StyleShit\DIContainer\Tests\Mocks\UntypedDependency;
+use StyleShit\DIContainer\Tests\Mocks\VariadicClass;
+use StyleShit\DIContainer\Tests\Mocks\VariadicPrimitive;
 
 afterEach(function () {
     Container::getInstance()->flush();
@@ -176,6 +181,26 @@ it('should make concrete with args when using the default resolver', function ()
     expect($d)->toEqual(new D('test'));
 });
 
+it('should throw for untyped dependency without default value', function () {
+    // Arrange.
+    $container = Container::getInstance();
+
+    // Act & Assert.
+    expect(function () use ($container) {
+        $container->make(UntypedDependency::class);
+    })->toThrow(UnresolvableDependencyException::class);
+});
+
+it('should throw for primitive dependency without default value', function () {
+    // Arrange.
+    $container = Container::getInstance();
+
+    // Act & Assert.
+    expect(function () use ($container) {
+        $container->make(PrimitiveDependency::class);
+    })->toThrow(UnresolvableDependencyException::class);
+});
+
 it('should auto-wire class dependencies', function () {
     // Arrange.
     $container = Container::getInstance();
@@ -193,6 +218,32 @@ it('should auto-wire class dependencies', function () {
     $expectedA = new A(new B(new C(new ContractImpl())), 'test');
 
     expect($a)->toEqual($expectedA);
+});
+
+it('should auto-wire variadic primitive dependencies', function () {
+    // Arrange.
+    $container = Container::getInstance();
+
+    // Act.
+    $variadicPrimitive = $container->make(VariadicPrimitive::class);
+
+    // Assert.
+    $expected = new VariadicPrimitive('mock');
+
+    expect($variadicPrimitive)->toEqual($expected);
+});
+
+it('should auto-wire variadic class dependencies', function () {
+    // Arrange.
+    $container = Container::getInstance();
+
+    // Act.
+    $variadicClass = $container->make(VariadicClass::class);
+
+    // Assert.
+    $expected = new VariadicClass('mock', new D());
+
+    expect($variadicClass)->toEqual($expected);
 });
 
 it('should bind an abstract to a concrete as singleton', function () {
