@@ -16,6 +16,7 @@ use StyleShit\DIContainer\Tests\Mocks\Contract;
 use StyleShit\DIContainer\Tests\Mocks\ContractImplementation;
 use StyleShit\DIContainer\Tests\Mocks\ContractImplementation2;
 use StyleShit\DIContainer\Tests\Mocks\D;
+use StyleShit\DIContainer\Tests\Mocks\MultipleTypedDependencies;
 use StyleShit\DIContainer\Tests\Mocks\NeedsContract;
 use StyleShit\DIContainer\Tests\Mocks\PrimitiveDependency;
 use StyleShit\DIContainer\Tests\Mocks\UntypedDependency;
@@ -222,6 +223,25 @@ it('should auto-wire class dependencies', function () {
     expect($a)->toEqual($expectedA);
 });
 
+it('should auto-wire multiple typed class dependencies', function () {
+    // Arrange.
+    $container = Container::getInstance();
+
+    $container->bind(Contract::class, function () {
+        return new ContractImplementation();
+    });
+
+    // Act.
+    $result = $container->make(MultipleTypedDependencies::class, [
+        'name' => 'test',
+    ]);
+
+    // Assert.
+    $expected = new MultipleTypedDependencies(new ContractImplementation(), new D(), 'test');
+
+    expect($result)->toEqual($expected);
+});
+
 it('should auto-wire variadic primitive dependencies', function () {
     // Arrange.
     $container = Container::getInstance();
@@ -381,6 +401,27 @@ it('should make singleton dependencies contextually without using the existing s
 
     expect($c->contract)->not()->toBe($initialSingleton);
     expect($container->make(Contract::class))->toBe($initialSingleton);
+});
+
+it('should make dependencies contextually with multiple typed dependencies', function () {
+    // Arrange.
+    $container = Container::getInstance();
+
+    // Act.
+    $container->when(MultipleTypedDependencies::class)
+        ->needs(D::class)
+        ->give(function () {
+            return new D('test');
+        });
+
+    $container->when(MultipleTypedDependencies::class)
+        ->needs(Contract::class)
+        ->give(ContractImplementation::class);
+
+    // Assert.
+    $expected = new MultipleTypedDependencies(new ContractImplementation(), new D('test'));
+
+    expect($container->make(MultipleTypedDependencies::class))->toEqual($expected);
 });
 
 it('should forget a singleton instance', function () {

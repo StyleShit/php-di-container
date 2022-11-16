@@ -90,14 +90,16 @@ class Container
                 throw AbstractNotFoundException::make($abstract);
             }
 
-            return $this->makeWithDependencies($abstract, $args);
+            $object = $this->makeWithDependencies($abstract, $args);
+        } else {
+            $object = $this->isShared($abstract)
+                ? $this->resolveSharedConcrete($abstract, $args)
+                : $this->resolveConcrete($abstract, $args);
         }
 
-        if ($this->isShared($abstract)) {
-            return $this->resolveSharedConcrete($abstract, $args);
-        }
+        array_pop($this->buildStack);
 
-        return $this->resolveConcrete($abstract, $args);
+        return $object;
     }
 
     public function forgetInstance($abstract)
