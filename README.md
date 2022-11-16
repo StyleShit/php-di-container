@@ -1,5 +1,5 @@
 # PHP DI Container
-Just a simple DI Container for PHP, Inspired by Laravel's API.
+Just a simple DI Container for PHP, Inspired by [Laravel's API](https://laravel.com/docs/master/container).
 
 ## Available Methods:
 
