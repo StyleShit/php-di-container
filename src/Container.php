@@ -15,7 +15,11 @@ class Container
 
     protected $bindings = [];
 
+    protected $contextualBindings = [];
+
     protected $instances = [];
+
+    protected $buildStack = [];
 
     public static function getInstance()
     {
@@ -57,13 +61,25 @@ class Container
         return $this->bind($abstract, $concrete, true);
     }
 
+    public function when($concrete)
+    {
+        return new ContextualBindingBuilder($this, $concrete);
+    }
+
+    public function addContextualBinding($concrete, $needs, $implementation)
+    {
+        $this->contextualBindings[$concrete][$needs] = $this->wrapConcrete($implementation);
+    }
+
     public function has($abstract)
     {
-        return isset($this->bindings[$abstract]);
+        return isset($this->bindings[$abstract]) || $this->needsContextualBinding($abstract);
     }
 
     public function make($abstract, $args = [])
     {
+        $this->buildStack[] = $abstract;
+
         // Try to automatically make an abstract even if it's not bound.
         if (! $this->has($abstract)) {
             if (interface_exists($abstract)) {
@@ -77,20 +93,11 @@ class Container
             return $this->makeWithDependencies($abstract, $args);
         }
 
-        $binding = $this->bindings[$abstract];
-        $resolve = $binding['resolver'];
-
-        // Singletons.
-        if ($binding['shared']) {
-            if (! isset($this->instances[$abstract])) {
-                $this->instances[$abstract] = $resolve($this, $args);
-            }
-
-            return $this->instances[$abstract];
+        if ($this->isShared($abstract)) {
+            return $this->resolveSharedConcrete($abstract, $args);
         }
 
-        // Non-Singletons.
-        return $resolve($this, $args);
+        return $this->resolveConcrete($abstract, $args);
     }
 
     public function forgetInstance($abstract)
@@ -107,6 +114,8 @@ class Container
     {
         $this->bindings = [];
         $this->instances = [];
+        $this->contextualBindings = [];
+        $this->buildStack = [];
     }
 
     protected function wrapConcrete($concrete)
@@ -134,6 +143,44 @@ class Container
         $reflection = new \ReflectionClass($concrete);
 
         return $reflection->isInstantiable();
+    }
+
+    protected function isShared($abstract)
+    {
+        return ! empty($this->bindings[$abstract]['shared']);
+    }
+
+    protected function resolveSharedConcrete($abstract, $args)
+    {
+        if ($this->needsContextualBinding($abstract)) {
+            return $this->resolveContextualConcrete($abstract, $args);
+        }
+
+        if (! isset($this->instances[$abstract])) {
+            $resolve = $this->bindings[$abstract]['resolver'];
+
+            $this->instances[$abstract] = $resolve($this, $args);
+        }
+
+        return $this->instances[$abstract];
+    }
+
+    protected function resolveConcrete($abstract, $args)
+    {
+        if ($this->needsContextualBinding($abstract)) {
+            return $this->resolveContextualConcrete($abstract, $args);
+        }
+
+        $resolve = $this->bindings[$abstract]['resolver'];
+
+        return $resolve($this, $args);
+    }
+
+    protected function resolveContextualConcrete($abstract, $args)
+    {
+        $resolve = $this->getContextualConcrete($abstract);
+
+        return $resolve($this, $args);
     }
 
     protected function makeWithDependencies($concrete, $args)
@@ -202,5 +249,24 @@ class Container
     protected function isResolveableDependency(\ReflectionParameter $dep)
     {
         return $dep->hasType() && ! $dep->getType()->isBuiltin();
+    }
+
+    protected function needsContextualBinding($abstract)
+    {
+        return (bool) $this->getContextualConcrete($abstract);
+    }
+
+    protected function getContextualConcrete($abstract)
+    {
+        $currentConcrete = $this->getCurrentBuiltConcrete();
+
+        return $this->contextualBindings[$currentConcrete][$abstract] ?? null;
+    }
+
+    protected function getCurrentBuiltConcrete()
+    {
+        $last = count($this->buildStack) - 2;
+
+        return $this->buildStack[$last] ?? null;
     }
 }

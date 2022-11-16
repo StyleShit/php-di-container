@@ -157,5 +157,33 @@ $container->singleton(Interface2::class, Implementation2::class);
 $container->flush();
 ```
 
+
+### `Container::when($abstract)`
+Binding interfaces to implementations based on context:
+
+```PHP
+$container = Container::getInstance();
+
+$container->when(A::class)
+    ->needs(InterfaceName::class)
+    ->give(Implementation::class);
+
+$container->when(B::class)
+    ->needs(InterfaceName::class)
+    ->give(function () {
+        return new Implementation('my-param');
+    });
+
+// Resolves to: `new A(new Implementation())`
+$container->make(A::class);
+
+// Resolves to: `new B(new Implementation('my-param'))`
+$container->make(B::class);
+```
+
+> **Note**
+> 
+> When contextually binding an interface that's bound as a singleton, the context class will receive a new instance instead of the already initialized one.
+
 ___
 For more information, check out the [tests](./tests/ContainerTest.php).

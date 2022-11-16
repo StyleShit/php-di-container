@@ -13,8 +13,10 @@ use StyleShit\DIContainer\Tests\Mocks\A;
 use StyleShit\DIContainer\Tests\Mocks\B;
 use StyleShit\DIContainer\Tests\Mocks\C;
 use StyleShit\DIContainer\Tests\Mocks\Contract;
-use StyleShit\DIContainer\Tests\Mocks\ContractImpl;
+use StyleShit\DIContainer\Tests\Mocks\ContractImplementation;
+use StyleShit\DIContainer\Tests\Mocks\ContractImplementation2;
 use StyleShit\DIContainer\Tests\Mocks\D;
+use StyleShit\DIContainer\Tests\Mocks\NeedsContract;
 use StyleShit\DIContainer\Tests\Mocks\PrimitiveDependency;
 use StyleShit\DIContainer\Tests\Mocks\UntypedDependency;
 use StyleShit\DIContainer\Tests\Mocks\VariadicClass;
@@ -83,10 +85,10 @@ it('should bind an abstract to concrete using class string', function () {
     $container = Container::getInstance();
 
     // Act.
-    $container->bind(Contract::class, ContractImpl::class);
+    $container->bind(Contract::class, ContractImplementation::class);
 
     // Assert.
-    expect($container->make(Contract::class, ['name' => 'test']))->toEqual(new ContractImpl('test'));
+    expect($container->make(Contract::class, ['name' => 'test']))->toEqual(new ContractImplementation('test'));
 });
 
 it('should resolve concrete automatically if not bound', function () {
@@ -206,7 +208,7 @@ it('should auto-wire class dependencies', function () {
     $container = Container::getInstance();
 
     $container->bind(Contract::class, function () {
-        return new ContractImpl();
+        return new ContractImplementation();
     });
 
     // Act.
@@ -215,7 +217,7 @@ it('should auto-wire class dependencies', function () {
     ]);
 
     // Assert.
-    $expectedA = new A(new B(new C(new ContractImpl())), 'test');
+    $expectedA = new A(new B(new C(new ContractImplementation())), 'test');
 
     expect($a)->toEqual($expectedA);
 });
@@ -251,14 +253,14 @@ it('should bind an abstract to a concrete as singleton', function () {
     $container = Container::getInstance();
 
     // Act.
-    $container->singleton(Contract::class, ContractImpl::class);
+    $container->singleton(Contract::class, ContractImplementation::class);
 
     $contractImpl = $container->make(Contract::class, [
         'name' => 'test',
     ]);
 
     // Assert.
-    expect($contractImpl)->toEqual(new ContractImpl('test'));
+    expect($contractImpl)->toEqual(new ContractImplementation('test'));
 });
 
 it('should bind an abstract to a resolver as singleton', function () {
@@ -267,7 +269,7 @@ it('should bind an abstract to a resolver as singleton', function () {
 
     // Act.
     $container->singleton(Contract::class, function ($container, $args) {
-        return new ContractImpl($args['name']);
+        return new ContractImplementation($args['name']);
     });
 
     $contractImpl = $container->make(Contract::class, [
@@ -275,7 +277,7 @@ it('should bind an abstract to a resolver as singleton', function () {
     ]);
 
     // Assert.
-    expect($contractImpl)->toEqual(new ContractImpl('test'));
+    expect($contractImpl)->toEqual(new ContractImplementation('test'));
 });
 
 it('should bind a concrete as singleton', function () {
@@ -324,6 +326,63 @@ it('should override existing singleton instance on re-bind', function () {
     expect($container->make(D::class))->toBe('new-singleton');
 });
 
+it('should make dependencies contextually using class string', function () {
+    // Arrange.
+    $container = Container::getInstance();
+    $container->bind(Contract::class, ContractImplementation::class);
+
+    // Act.
+    $container->when(C::class)
+        ->needs(Contract::class)
+        ->give(ContractImplementation2::class);
+
+    // Assert.
+    $expectedNeedsContract = new NeedsContract(new ContractImplementation());
+    $expectedC = new C(new ContractImplementation2());
+
+    expect($container->make(NeedsContract::class))->toEqual($expectedNeedsContract);
+    expect($container->make(C::class))->toEqual($expectedC);
+});
+
+it('should make dependencies contextually using resolver function', function () {
+    // Arrange.
+    $container = Container::getInstance();
+    $container->bind(Contract::class, ContractImplementation::class);
+
+    // Act.
+    $container->when(C::class)
+        ->needs(Contract::class)
+        ->give(function () {
+            return new ContractImplementation2('test');
+        });
+
+    // Assert.
+    $expectedNeedsContract = new NeedsContract(new ContractImplementation());
+    $expectedC = new C(new ContractImplementation2('test'));
+
+    expect($container->make(NeedsContract::class))->toEqual($expectedNeedsContract);
+    expect($container->make(C::class))->toEqual($expectedC);
+});
+
+it('should make singleton dependencies contextually without using the existing singletons', function () {
+    // Arrange.
+    $container = Container::getInstance();
+    $container->singleton(Contract::class, ContractImplementation::class);
+
+    $initialSingleton = $container->make(Contract::class);
+
+    // Act.
+    $container->when(C::class)
+        ->needs(Contract::class)
+        ->give(ContractImplementation::class);
+
+    // Assert.
+    $c = $container->make(C::class);
+
+    expect($c->contract)->not()->toBe($initialSingleton);
+    expect($container->make(Contract::class))->toBe($initialSingleton);
+});
+
 it('should forget a singleton instance', function () {
     // Arrange.
     $container = Container::getInstance();
@@ -343,17 +402,17 @@ it('should forget all singleton instances', function () {
     // Arrange.
     $container = Container::getInstance();
 
-    $container->singleton(ContractImpl::class);
+    $container->singleton(ContractImplementation::class);
     $container->singleton(D::class);
 
-    $instanceContract = $container->make(ContractImpl::class);
+    $instanceContract = $container->make(ContractImplementation::class);
     $instanceD = $container->make(D::class);
 
     // Act.
     $container->forgetInstances();
 
     // Assert.
-    expect($instanceContract)->not()->toBe($container->make(ContractImpl::class));
+    expect($instanceContract)->not()->toBe($container->make(ContractImplementation::class));
     expect($instanceD)->not()->toBe($container->make(D::class));
 });
 
@@ -362,14 +421,28 @@ it('should flush the current bindings and instances', function () {
     $container = Container::getInstance();
 
     $container->bind(Contract::class, function ($container, $args) {
-        return new ContractImpl($args['name']);
+        return new ContractImplementation($args['name']);
     });
+
+    $container->singleton(D::class, function () {
+        return 'test';
+    });
+
+    $container->when(C::class)
+        ->needs(Contract::class)
+        ->give(ContractImplementation::class);
 
     // Act.
     $container->flush();
 
     // Assert.
+    expect($container->make(D::class))->toEqual(new D());
+
     expect(function () use ($container) {
         $container->make(Contract::class);
+    })->toThrow(InterfaceNotBoundException::class);
+
+    expect(function () use ($container) {
+        $container->make(C::class);
     })->toThrow(InterfaceNotBoundException::class);
 });
